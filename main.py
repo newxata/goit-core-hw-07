@@ -1,0 +1,149 @@
+from collections import UserDict
+from datetime import datetime
+
+
+class Field:
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return str(self.value)
+
+# Клас для зберігання імені контакту. Обов'язкове поле
+class Name(Field):
+    def __init__(self, value):
+        if not value:
+            raise ValueError('Name is required') # Помилка якщо імʼя не додане
+        super().__init__(value)
+
+# Клас для зберігання номера телефону
+class Phone(Field):
+    def __init__(self, value):
+        # Перевірка - номер телефону повинен складатися з цифр і мати довжину 10 знаків
+        if not value.isdigit() or len(value) != 10:
+            raise ValueError(f'Phone number: "{value}" is incorrect')
+        super().__init__(value)
+
+# Клас для зберігання дня народження контакту
+class Birthday(Field):
+    def __init__(self, value):
+        try:
+            self.value = datetime.strptime(value, '%d.%m.%Y').date()
+        except ValueError:
+            raise ValueError('Invalid date format. Use DD.MM.YYYY')
+        super().__init__(value)
+
+# Клас для зберігання інформації про контакт, включаючи ім'я та список телефонів
+class Record:
+    def __init__(self, name):
+        self.name = Name(name)
+        self.phones = []
+        self.birthday = None
+
+    # Метод який додає телефон у список контактів
+    def add_phone(self, phone):
+        self.phones.append(Phone(phone))
+
+    # Метод видалення телефону зі списку контактів
+    def remove_phone(self, phone):
+        p = self.find_phone(phone)
+        if p:
+            self.phones.remove(p)
+        return p
+
+    # Метод заміни старого номеру телефону на новий. Якщо номер не відповідає умовам або не знайдено, то виводиться помилка ValueError
+    def edit_phone(self, old_phone, new_phone):
+        for p in self.phones:
+            if p.value == old_phone:
+                p.value = new_phone
+                return Phone(new_phone) # Валідація формату нового номеру телефону
+        # Вивід помилки в разі якщо старий номер телефону не знайдено в списку контактів
+        raise ValueError(f'The phone: {old_phone} not found in contact name: {self.name}')
+
+    # Метод для пошуку номера телефона в списку контактів. Якщо не знайдено, то повертає None
+    def find_phone(self, phone):
+        return next((p for p in self.phones if p.value == phone), None)
+
+    # Метод який додає дату народження у список контактів, необовʼязкове поле
+    def add_birthday(self, birthday):
+        self.birthday = Birthday(birthday)
+
+    def __str__(self):
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+
+# Клас для зберігання та управління записами
+class AddressBook(UserDict):
+    def add_record(self, record: Record):
+        self.data[record.name.value] = record
+
+    # Метод який знаходить запис за ім'ям. Якщо імʼя не знайдено, повертає None
+    def find(self, name):
+        return self.data.get(name, None)
+
+    # Метод який видаляє запис за ім'ям
+    def delete(self, name):
+        if name in self.data:
+            del self.data[name]
+        else:
+            print(f'Contact name: {name} not found') # Виводить повідомлення в разі якщо імʼя не існує
+
+    def __str__(self):
+        return '\n'.join(str(record) for record in self.data.values())
+
+# Створення нової адресної книги
+book = AddressBook()
+
+# Створення запису для John
+john_record = Record("John")
+john_record.add_phone("1234567890")
+john_record.add_phone("5555555555")
+
+# Додавання запису John до адресної книги
+book.add_record(john_record)
+
+# Створення та додавання нового запису для Jane
+jane_record = Record("Jane")
+jane_record.add_phone("9876543210")
+book.add_record(jane_record)
+
+# Виведення всіх записів у книзі
+
+print(book)
+
+# Знаходження та редагування телефону для John
+john = book.find("John")
+john.edit_phone("1234567890", "1112223333")
+
+print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
+
+# Пошук конкретного телефону у записі John
+found_phone = john.find_phone("5555555555")
+print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
+
+# Видалення запису Jane
+book.delete("Jane")
+
+
+'''
+Нижче додатковий контакт який використовувався для перевірити інші варіантів помилок
+та роботи коду
+'''
+# mike = Record("Mike")
+# mike.add_phone("ukr0983345690")
+# mike.add_phone("0983345690")
+# mike.add_phone("0903345690")
+# mike.add_phone("0975555555")
+# mike.add_phone("0975555555")
+# # book.add_record(mike)
+
+
+# print(book)
+# print(book.find('Mike'))
+# book.delete('Mike')
+# print(book.find('Mike'))
+# mike.remove_phone('0983345690')
+# print(book.find('Mike'))
+# mike.edit_phone('0975555555', "9876543230")
+# mike.edit_phone('0975555555', "ukr9876543230")
+# print(book.find('Mike'))
+
