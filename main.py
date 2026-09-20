@@ -51,7 +51,7 @@ class Record:
             self.phones.remove(p)
         return p
 
-    # Метод зміни номеру телефону контакта
+    # Метод зміни номера телефону контакту
     def edit_phone(self, old_phone, new_phone):
         for p in self.phones:
             if p.value == old_phone:
@@ -76,18 +76,18 @@ class AddressBook(UserDict):
     def add_record(self, record: Record):
         self.data[record.name.value] = record
 
-    # Метод пошуку контакта за імʼям. Якщо імʼя не знайдено, повертає None
+    # Метод пошуку контакту за імʼям. Якщо імʼя не знайдено, повертає None
     def find(self, name):
         return self.data.get(name, None)
 
-    # Метод видалення контакта за ім'ям
+    # Метод видалення контакту за ім'ям
     def delete(self, name):
         if name in self.data:
             del self.data[name]
         else:
             print(f'Contact name: {name} not found') # Виводить повідомлення в разі якщо імʼя не існує
 
-    # Метод визначення контактів, у яких день народження припадає вперед на 7 днів
+    # Метод визначення контактів, у яких день народження припадає вперед на 7 робочих днів
     def get_upcoming_birthdays(self, days=7):
         today = datetime.now().date()
         birthday_list = []
@@ -98,7 +98,7 @@ class AddressBook(UserDict):
             birthday = record.birthday.value.replace(year=today.year)
             if birthday < today:
                 birthday = record.birthday.value.replace(year=today.year + 1)
-            # Розрахунок днів до дати дня народження контакта
+            # Розрахунок днів до дати дня народження контакту
             delta_days = birthday.toordinal() - today.toordinal()
             # Додаємо в список контакти у яких день народження припадає вперед на 7 робочих днів
             if delta_days <= days:
