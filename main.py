@@ -1,5 +1,5 @@
 from collections import UserDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class Field:
@@ -28,10 +28,10 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
+            # Перетворення даних у формат date з перевіркою на помилку
             self.value = datetime.strptime(value, '%d.%m.%Y').date()
         except ValueError:
             raise ValueError('Invalid date format. Use DD.MM.YYYY')
-        super().__init__(value)
 
 # Клас для зберігання інформації про контакт, включаючи ім'я та список телефонів
 class Record:
@@ -51,7 +51,7 @@ class Record:
             self.phones.remove(p)
         return p
 
-    # Метод заміни старого номеру телефону на новий. Якщо номер не відповідає умовам або не знайдено, то виводиться помилка ValueError
+    # Метод зміни номеру телефону контакта
     def edit_phone(self, old_phone, new_phone):
         for p in self.phones:
             if p.value == old_phone:
@@ -64,7 +64,7 @@ class Record:
     def find_phone(self, phone):
         return next((p for p in self.phones if p.value == phone), None)
 
-    # Метод який додає дату народження у список контактів, необовʼязкове поле
+    # Метод додавання дати народження контакту, необовʼязкове поле
     def add_birthday(self, birthday):
         self.birthday = Birthday(birthday)
 
@@ -76,16 +76,41 @@ class AddressBook(UserDict):
     def add_record(self, record: Record):
         self.data[record.name.value] = record
 
-    # Метод який знаходить запис за ім'ям. Якщо імʼя не знайдено, повертає None
+    # Метод пошуку контакта за імʼям. Якщо імʼя не знайдено, повертає None
     def find(self, name):
         return self.data.get(name, None)
 
-    # Метод який видаляє запис за ім'ям
+    # Метод видалення контакта за ім'ям
     def delete(self, name):
         if name in self.data:
             del self.data[name]
         else:
             print(f'Contact name: {name} not found') # Виводить повідомлення в разі якщо імʼя не існує
+
+    # Метод визначення контактів, у яких день народження припадає вперед на 7 днів
+    def get_upcoming_birthdays(self, days=7):
+        today = datetime.now().date()
+        birthday_list = []
+        for record in self.data.values():
+            if record.birthday is None:
+                continue
+            # Приводимо рік дати народження у відповідність до поточного
+            birthday = record.birthday.value.replace(year=today.year)
+            if birthday < today:
+                birthday = record.birthday.value.replace(year=today.year + 1)
+            # Розрахунок днів до дати дня народження контакта
+            delta_days = birthday.toordinal() - today.toordinal()
+            # Додаємо в список контакти у яких день народження припадає вперед на 7 робочих днів
+            if delta_days <= days:
+                if birthday.weekday() == 5:
+                    birthday += timedelta(days=2)
+                elif birthday.weekday() == 6:
+                    birthday += timedelta(days=1)
+                birthday_list.append({
+                    'name': record.name.value,
+                    'birthday': record.birthday.value.strftime('%d.%m.%Y')
+                })
+        return birthday_list
 
     def __str__(self):
         return '\n'.join(str(record) for record in self.data.values())
