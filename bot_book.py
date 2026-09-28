@@ -1,60 +1,59 @@
 from main import AddressBook, Record
 
-
 # Декоратор input_error для обробки помилок
 def input_error(func):
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except ValueError:
-            return 'Give me name and phone please.'
+            return 'You entered an incorrect name or phone! Please try again.'
         except IndexError:
             return 'Enter the name.'
         except KeyError:
             return 'Contact not found!'
+        except AttributeError:
+            return 'Contact not found! Please try again.'
     return inner
 
 # Функція яка приймає рядок вводу користувача
 def parse_input(user_input):
     # Повертаємо перше слово як команду та зберігаємо у змінній cmd, решту зберігаємо як список аргументів *args
-    cmd, *args = user_input.split(' ')
-    # Видаляємо зайві пробіли та перетворюємо на нижній регістр
+    cmd, *args = user_input.split()
     cmd = cmd.strip().lower()
     return cmd, args
 
-# Функція додавання нового контакту
-@input_error # Декоратор обробки помилок
+# Функція додавання нового контакта
+@input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
     record = book.find(name)
-    message = 'Contact updated.'
     if record is None:
         record = Record(name)
-        book.add_record(record)
-        message = 'Contact added.'
-    if phone:
         record.add_phone(phone)
-    return message
+        book.add_record(record)
+        return f'Contact "{name}" added.'
+    # Перевірка якщо телефон вже привʼязаний до контакта
+    if record.find_phone(phone):
+        return f'The phone: "{phone}" is already in use.'
+    record.add_phone(phone)
+    return f'Contact "{name}" updated.'
 
-# Функція зміни номера телефону контакту зі списку контактів
-@input_error # Декоратор обробки помилок
-def change_contact(args, contacts):
-    name, phone = args
-    # Перевірка існування імені в списку контактів
-    if name not in contacts:
-        raise KeyError
-    contacts[name] = phone
-    return 'Contact updated!'
+# Функція зміни номера телефону контакта зі списку контактів
+@input_error
+def change_contact(args, book: AddressBook):
+    name, old_phone, new_phone, *_ = args
+    record = book.find(name)
+    record.edit_phone(old_phone, new_phone)
+    return f'Contact "{name}" updated.'
 
 # Функція виведення номера телефону контакту
 @input_error # Декоратор обробки помилок
-def show_phone(args, contacts):
-    # Обмеження на введення більше ніж одного значення
-    if len(args) == 1:
-        name = args[0]
-        return contacts[name]
-    else:
-        raise IndexError
+def show_phone(args, book: AddressBook):
+    name, phone, *_ = args
+    record = book.find(name)
+    if record.find_phone(phone):
+        return f'{name}: {phone}'
+    return f'Contact "{name}" not found.'
 
 @input_error
 def add_birthday(args, book):
@@ -66,22 +65,15 @@ def add_birthday(args, book):
 def show_birthday(args, book):
     pass
 
-
-
 @input_error
 def birthdays(args, book):
     # return book.get_upcoming_birthdays()
     pass
 
-
-
-
-
 # Функція виведення всіх збережених контактів
-def show_all(args, contacts):
-    # Команда виведення всіх збережених контактів має складатись з одного значення
+def show_all(args, book: AddressBook):
     if len(args) == 0:
-        return '\n'.join(f'{name}: {phone}' for name, phone in contacts.items())
+        return book
     else:
         return 'Enter only "all".'
 
