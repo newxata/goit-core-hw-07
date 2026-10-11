@@ -1,5 +1,6 @@
 from main import AddressBook, Record
 
+
 # Декоратор input_error для обробки помилок
 def input_error(func):
     def inner(*args, **kwargs):
@@ -22,7 +23,8 @@ def parse_input(user_input):
     cmd = cmd.strip().lower()
     return cmd, args
 
-# Функція додавання нового контакта
+# Функція: add [ім'я] [телефон]: Додає або новий контакт з іменем та телефонним номером,
+# або телефонний номер до контакту який вже існує.
 @input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
@@ -38,7 +40,7 @@ def add_contact(args, book: AddressBook):
     record.add_phone(phone)
     return f'Contact "{name}" updated.'
 
-# Функція зміни номера телефону контакта зі списку контактів
+# Функція: change [ім'я] [старий телефон] [новий телефон]: Змінює телефонний номер для вказаного контакту.
 @input_error
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone, *_ = args
@@ -46,31 +48,38 @@ def change_contact(args, book: AddressBook):
     record.edit_phone(old_phone, new_phone)
     return f'Contact "{name}" updated.'
 
-# Функція виведення номера телефону контакту
-@input_error # Декоратор обробки помилок
+# Функція: phone [ім'я]: Показує телефонні номери для вказаного контакту.
+@input_error
 def show_phone(args, book: AddressBook):
-    name, phone, *_ = args
+    name, *_ = args
     record = book.find(name)
-    if record.find_phone(phone):
-        return f'{name}: {phone}'
-    return f'Contact "{name}" not found.'
+    return '\n'.join(phone.value for phone in record.phones)
 
+# Функція: add-birthday [ім'я] [дата народження]: Додає дату народження для вказаного контакту.
 @input_error
-def add_birthday(args, book):
-    name, birthday = args
-    book[name] = birthday
-    return 'Birthday added!'
+def add_birthday(args, book: AddressBook):
+    name, birthday, *_ = args
+    record = book.find(name)
+    try:
+        record.add_birthday(birthday)
+    except ValueError:
+        return 'Invalid date format. Use DD.MM.YYYY'
+    return f'Birthday for "{name}" added.'
 
+# Функція: show-birthday [ім'я]: Показує дату народження для вказаного контакту.
 @input_error
-def show_birthday(args, book):
-    pass
+def show_birthday(args, book: AddressBook):
+    name, *_ = args
+    record = book.find(name)
+    return record.birthday
 
+# Функція: birthdays: Показує дні народження на найближчі 7 днів з датами, коли їх треба привітати.
 @input_error
 def birthdays(args, book):
     # return book.get_upcoming_birthdays()
     pass
 
-# Функція виведення всіх збережених контактів
+# Функція: all: Показує всі контакти в адресній книзі.
 def show_all(args, book: AddressBook):
     if len(args) == 0:
         return book
