@@ -29,11 +29,14 @@ class Birthday(Field):
     def __init__(self, value):
         try:
             # Перетворення даних у формат date з перевіркою на помилку
-            # self.value = datetime.strptime(value, '%d.%m.%Y').date()
             date_birthday = datetime.strptime(value, '%d.%m.%Y').date()
         except ValueError:
             raise ValueError('Invalid date format. Use DD.MM.YYYY')
         super().__init__(date_birthday)
+
+    # Вивід дати у зрозумілому для користувача форматі
+    def __str__(self):
+        return self.value.strftime('%d.%m.%Y')
 
 # Клас для зберігання інформації про контакт, включаючи ім'я та список телефонів
 class Record:
