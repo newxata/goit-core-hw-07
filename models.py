@@ -28,15 +28,11 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            # Перетворення даних у формат date з перевіркою на помилку
-            date_birthday = datetime.strptime(value, '%d.%m.%Y').date()
+            # Перевірка формату: якщо рядок не відповідає DD.MM.YYYY, виникне ValueError
+            datetime.strptime(value, '%d.%m.%Y')
         except ValueError:
             raise ValueError('Invalid date format. Use DD.MM.YYYY')
-        super().__init__(date_birthday)
-
-    # Вивід дати у зрозумілому для користувача форматі
-    def __str__(self):
-        return self.value.strftime('%d.%m.%Y')
+        super().__init__(value)
 
 # Клас для зберігання інформації про контакт, включаючи ім'я та список телефонів
 class Record:
@@ -77,7 +73,10 @@ class Record:
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        result = f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        if self.birthday:
+            result += f", birthday: {self.birthday.value}"
+        return result
 
 # Клас для зберігання та управління записами
 class AddressBook(UserDict):
@@ -107,10 +106,12 @@ class AddressBook(UserDict):
         for record in self.data.values():
             if record.birthday is None:
                 continue
+            # Перетворюємо рядок дати народження в обʼєкт date
+            birth_date = datetime.strptime(record.birthday.value, '%d.%m.%Y').date()
             # Приводимо рік дати народження у відповідність до поточного
-            birthday = self._replace_year(record.birthday.value, today.year)
+            birthday = self._replace_year(birth_date, today.year)
             if birthday < today:
-                birthday = self._replace_year(record.birthday.value, today.year + 1)
+                birthday = self._replace_year(birth_date, today.year + 1)
             # Розрахунок днів до дати дня народження контакту
             delta_days = birthday.toordinal() - today.toordinal()
             # Додаємо в список контакти у яких день народження припадає вперед на 7 робочих днів
